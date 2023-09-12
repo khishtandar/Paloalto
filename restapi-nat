@@ -1,0 +1,27 @@
+import requests
+
+# Define the Palo Alto firewall API URL and authentication details
+api_url = "https://your-palo-alto-ip/api"
+username = "your-username"
+password = "your-password"
+
+# Define the API endpoint to retrieve NAT rules
+api_endpoint = f"{api_url}/v1/Policies/NATPostRules"
+
+# Make an HTTP GET request to the Palo Alto API with authentication
+response = requests.get(api_endpoint, auth=(username, password), verify=False)
+
+# Check if the request was successful (status code 200)
+if response.status_code == 200:
+    nat_rules = response.json()
+    # Assuming the response is a JSON object containing NAT rules data
+
+    # Iterate through the NAT rules and print them
+    for nat_rule in nat_rules:
+        print(f"Name: {nat_rule['name']}")
+        print(f"Source Zone: {nat_rule['from']['member']}")
+        print(f"Destination Zone: {nat_rule['to']['member']}")
+        print(f"Translated IP: {nat_rule['source-translation']['static-ip']['translated-address']}")
+        print("-" * 30)
+else:
+    print(f"Failed to retrieve NAT rules. Status code: {response.status_code}")
