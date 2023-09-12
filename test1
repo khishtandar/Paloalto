@@ -1,0 +1,54 @@
+import requests
+import csv
+
+# Define Palo Alto API URL and authentication details
+api_url = "https://your-palo-alto-ip/api"
+api_key = "your-api-key"
+
+# Define the CSV file containing NAT rules
+csv_file = "nat_rules.csv"
+
+# Read NAT rules from the CSV file
+nat_rules = []
+with open(csv_file, mode="r") as file:
+    csv_reader = csv.DictReader(file)
+    for row in csv_reader:
+        nat_rules.append(row)
+
+# Define a function to create NAT rules
+def create_nat_rule(nat_rule):
+    payload = f"""
+    <entry name="{nat_rule['Name']}">
+        <from>
+            <member>{nat_rule['Source Zone']}</member>
+        </from>
+        <to>
+            <member>{nat_rule['Destination Zone']}</member>
+        </to>
+        <source-translation>
+            <static-ip>
+                <bi-directional>no</bi-directional>
+                <translated-address>{nat_rule['Translated IP']}</translated-address>
+            </static-ip>
+        </source-translation>
+    </entry>
+    """
+    response = requests.post(
+        f"{api_url}/v1/Policies/NATPostRules",
+        headers={
+            "X-PAN-KEY": api_key,
+            "Content-Type": "application/xml",
+        },
+        data=payload,
+        verify=False,  # Disable SSL certificate verification
+    )
+
+    if response.status_code == 201:
+        print(f"Created NAT rule: {nat_rule['Name']}")
+    else:
+        print(f"Failed to create NAT rule: {nat_rule['Name']}")
+        print(response.text)
+
+# Iterate through the NAT rules and create them
+for nat_rule in nat_rules:
+    create_nat_rule(nat_rule)
