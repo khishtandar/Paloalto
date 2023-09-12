@@ -1,45 +1,30 @@
 import requests
+import xml.etree.ElementTree as ET
 
-# Define your PaloAlto API credentials and URL
-api_url = 'https://your-paloalto-firewall/api'
-username = 'your-username'
-password = 'your-password'
+# Define the Palo Alto device URL, username, and password
+device_url = "https://your-palo-alto-device/api"
+username = "your-username"
+password = "your-password"
 
-# Create a session and authenticate with the firewall
-session = requests.session()
-login_payload = {
-    'username': username,
-    'password': password
-}
-login_url = f'{api_url}/login'
-response = session.post(login_url, data=login_payload)
+# Define the API endpoint to get the system information
+api_endpoint = f"{device_url}/?type=op&cmd=<show><system><info></info></system></show>"
 
-if response.status_code != 200:
-    print(f'Failed to authenticate: {response.text}')
-    exit()
+# Make an HTTP GET request to the Palo Alto API
+response = requests.get(api_endpoint, auth=(username, password), verify=False)
 
-# Read the CSV file and loop through the rows
-with open('nat_rules.csv', 'r') as file:
-    for line in file:
-        source_ip, dest_ip, translated_ip, service = line.strip().split(',')
-        
-        # Define the NAT rule payload
-        payload = {
-            'source': source_ip,
-            'destination': dest_ip,
-            'translated': translated_ip,
-            'service': service,
-            # Add other parameters as needed
-        }
-        
-        # Make an API POST request to create the NAT rule
-        response = session.post(f'{api_url}/nat/rules', json=payload)
-        
-        if response.status_code == 200:
-            print(f'Successfully created NAT rule for {source_ip}')
-        else:
-            print(f'Failed to create NAT rule for {source_ip}: {response.text}')
-
-# Logout to end the session
-logout_url = f'{api_url}/logout'
-session.post(logout_url)
+# Check if the request was successful
+if response.status_code == 200:
+    # Parse the XML response
+    root = ET.fromstring(response.text)
+    
+    # Find the hostname element in the XML
+    hostname_element = root.find(".//hostname")
+    
+    # Extract and print the hostname
+    if hostname_element is not None:
+        hostname = hostname_element.text
+        print(f"Palo Alto hostname: {hostname}")
+    else:
+        print("Hostname not found in the response.")
+else:
+    print(f"Failed to retrieve hostname. Status code: {response.status_code}")
