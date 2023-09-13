@@ -1,0 +1,23 @@
+---
+- name: Define Address Objects
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: Load object data from CSV
+      csv_read:
+        path: objects.csv
+        delimiter: ","
+      register: object_data
+
+    - name: Create Address Objects
+      panos_address_object:
+        provider:
+          host: your-palo-alto-ip
+          username: your-username
+          password: "{{ palo_alto_password }}"
+          api_key: null
+          validate_certs: no
+        name: "{{ item.Name }}"
+        description: "Address object created by Ansible"
+        address: "{{ item.IP_Address }}"
+      loop: "{{ object_data.list }}"
