@@ -1,0 +1,26 @@
+---
+- name: Create Static Source NAT Rules
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Load NAT rules from CSV
+      csv_read:
+        path: nat_rules.csv
+        delimiter: ","
+      register: nat_rules
+
+    - name: Create Static Source NAT Rules
+      panos_nat_rule:
+        provider:
+          host: your-palo-alto-ip
+          username: your-username
+          password: your-password
+          api_key: null  # Make sure api_key is set to null to use username and password
+          validate_certs: no  # Set to yes or no based on SSL certificate validation requirement
+        name: "{{ item.Name }}"
+        from_zone: "{{ item.SourceZone }}"
+        to_zone: "{{ item.DestinationZone }}"
+        nat_type: "ipv4"
+        source_translation_type: "static-ip"
+        source_translated_address: "{{ item.TranslatedIP }}"
+      loop: "{{ nat_rules.list }}"
